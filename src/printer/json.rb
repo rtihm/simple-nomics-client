@@ -4,7 +4,11 @@ module SimpleNomics
   module Printer
     module JSON
       def self.print(data, filters: [])
-        data = data.select { |key, _| filters.include?(key) } unless filters.empty?
+        unless filters.empty?
+          data = data.map do |ticker|
+            ticker.select { |key, _| filters.include?(key) }
+          end
+        end
 
         ::JSON.pretty_generate(data) + "\n"
       end
