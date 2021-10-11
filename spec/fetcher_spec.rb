@@ -51,13 +51,14 @@ RSpec.describe SimpleNomics::Fetcher do
     let(:url) { 'https://api.nomics.com/v1/currencies/ticker' }
     let(:currencies) { %w(ETH BTC) }
     let(:fiat) { 'EUR' }
+    let(:key) { 'API-KEY' }
 
     it "returns parsed response as object" do
       expect(described_class).to receive(:fetch_json)
-        .with(url, ids: currencies.join(','), convert: fiat)
+        .with(url, ids: currencies.join(','), convert: fiat, key: key)
         .and_return(nil)
 
-      result = described_class.currency_ticker(currency: currencies, convert: fiat)
+      result = described_class.currency_ticker(currency: currencies, convert: fiat, api_key: key)
 
       expect(result).to eq(nil)
     end

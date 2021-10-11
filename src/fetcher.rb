@@ -24,19 +24,10 @@ module SimpleNomics
       JSON.parse(response.body)
     end
 
-    # def query_params(params)
-    #   query = []
-    #   params.each do |key, value|
-    #     query << "#{key}=#{URI.escape(value)}" if value
-    #   end
-
-    #   query.join('&')
-    # end
-
-    def currency_ticker(currency: 'BTC', convert: 'USD')
+    def currency_ticker(currency: 'BTC', convert: 'USD', api_key:)
       currencies = Array(currency)
 
-      fetch_json(API_BASE + API_TICKER_PATH, ids: currencies.join(','), convert: convert)
+      fetch_json(API_BASE + API_TICKER_PATH, ids: currencies.join(','), convert: convert, key: api_key)
     end
 
     module_function :fetch_json, :currency_ticker
