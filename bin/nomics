@@ -1,0 +1,68 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'ostruct'
+
+require_relative '../src/fetcher'
+require_relative '../src/printer/json'
+# require_relative '../src/printer/human'
+require_relative '../src/printer/price_only'
+require_relative '../src/printer/crypto_price_compare'
+
+options = OpenStruct.new(
+  tickers: ['BTC'],
+  convert: 'USD',
+  printer: :json,
+  filters: []
+)
+OptionParser.new do |opt|
+  opt.banner = 'Usage: nomics [options]'
+  opt.on('-k', '--key API_KEY', 'Nomics API key (required)') { |o| options.api_key = o }
+  opt.on('-t', '--tickers BTC,ETH', 'Comma separated list of tickers (Default BTC)') do |o|
+    options.tickers = o.split(',')
+  end
+  opt.on('-c', '--convert FIAT_CURRENCY', 'Print price in fiat currency (Default: USD)') { |o| options.convert = o }
+  opt.on('-j', '--print-json', 'Print API response as JSON (Default)') { options.printer = :json }
+  # opt.on('-h', '--print-human', 'Print API response in human readable format') { options.printer = :human }
+  opt.on('-f', '--filters PARAMETER1,PARAMETER2', 'Comma separated list of parameters to show') do |o|
+    options.filters = o.split(',')
+  end
+  opt.on('--price-only', 'Print price and exit') { options.printer = :price_only }
+  opt.on('--calc-price-from BTC', 'Calculate "to" currency value based on "from" currency USD price') do |o|
+    options.calc_from = o
+  end
+  opt.on('--calc-price-to ETH', 'Calculate "to" currency value based on "from" currency USD price') do |o|
+    options.calc_to = o
+  end
+end.parse!
+
+unless options.api_key
+  puts 'Please pass valid API key using -k option.'
+  exit 1
+end
+
+if [options.calc_to, options.calc_from].compact.size == 1
+  puts 'Pass both --calc-price-from and --calc-price-to'
+  exit 1
+end
+
+if options.calc_from
+  options.printer = :crypto_price_compare
+  options.tickers = [options.calc_from, options.calc_to]
+  options.convert = 'USD'
+end
+
+data = SimpleNomics::Fetcher.currency_ticker(
+  api_key: options.api_key, currency: options.tickers, convert: options.convert
+)
+
+puts case options.printer
+     when :json
+       SimpleNomics::Printer::JSON.print(data, filters: options.filters)
+     # when :human
+     #   SimpleNomics::Printer::Human.print(data, filters: options.filters)
+     when :price_only
+       SimpleNomics::Printer::PriceOnly.print(data, options.convert)
+     when :crypto_price_compare
+       SimpleNomics::Printer::CryptoPriceCompare.print(data)
+     end
